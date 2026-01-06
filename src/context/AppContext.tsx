@@ -34,9 +34,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setError(null);
     try {
       const response = await snacksApi.getAll();
-      setSnacks(response.data);
+      setSnacks(Array.isArray(response.data) ? response.data : []);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to fetch snacks');
+      setSnacks([]); // Ensure it's always an array
     } finally {
       setLoading(false);
     }
@@ -47,9 +48,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setError(null);
     try {
       const response = await salesApi.getAll();
-      setSales(response.data);
+      setSales(Array.isArray(response.data) ? response.data : []);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to fetch sales');
+      setSales([]); // Ensure it's always an array
     } finally {
       setLoading(false);
     }
@@ -60,9 +62,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setError(null);
     try {
       const response = await stockApi.getAll();
-      setStocks(response.data);
+      setStocks(Array.isArray(response.data) ? response.data : []);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to fetch stocks');
+      setStocks([]); // Ensure it's always an array
     } finally {
       setLoading(false);
     }
