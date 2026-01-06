@@ -1,0 +1,56 @@
+# Node dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+out/
+public/build/
+
+# Vite cache
+.vite/
+.cache/
+
+# TypeScript
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Docker
+docker-compose.override.yml
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+*.local
+*.log
+
+# Keep lockfile if you want deterministic installs (uncomment to ignore)
+# package-lock.json
+
+# End of file
+.env
