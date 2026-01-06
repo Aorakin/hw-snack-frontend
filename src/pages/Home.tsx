@@ -29,9 +29,9 @@ export const Home: React.FC = () => {
     return saleDate.toDateString() === today.toDateString();
   }).length;
 
-  const currentDate = new Date().toLocaleDateString('en-US', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-  });
+//   const currentDate = new Date().toLocaleDateString('en-US', {
+//     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+//   });
 
   return (
     // Main Wrapper with deep gradient background
