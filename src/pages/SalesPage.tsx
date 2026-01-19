@@ -293,6 +293,7 @@ export const SalesPage: React.FC = () => {
                                       <th className="text-left text-xs text-slate-500 pb-2">Snack</th>
                                       <th className="text-right text-xs text-slate-500 pb-2">Qty</th>
                                       <th className="text-right text-xs text-slate-500 pb-2">Subtotal</th>
+                                      <th className="text-right text-xs text-slate-500 pb-2">Total</th>
                                     </tr>
                                   </thead>
                                   <tbody>
