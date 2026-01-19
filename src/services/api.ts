@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { API_URL } from '../config';
-import type { Snack, Sale, Stock, CreateSaleRequest, CreateStockRequest } from '../types';
+import type { Snack, Sale, Stock, CreateStockRequest } from '../types';
 
 const api = axios.create({
   baseURL: API_URL,
