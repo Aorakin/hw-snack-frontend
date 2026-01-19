@@ -89,7 +89,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setLoading(true);
     setError(null);
     try {
-      await salesApi.create(sale);
+      // Backend expects { sale_snacks: [{ snack_id, quantity }], operator?: string }
+      const payload = { sale_snacks: [{ snack_id: sale.snack_id, quantity: sale.quantity }] };
+      await salesApi.create(payload as any);
       await fetchSales();
       await fetchStocks(); // Refresh stocks as well
     } catch (err: any) {

@@ -22,7 +22,7 @@ export const snacksApi = {
 export const salesApi = {
   getAll: () => api.get<Sale[]>('/sales/'),
   getOne: (id: string) => api.get<Sale>(`/sales/${id}`),
-  create: (sale: CreateSaleRequest) => api.post<Sale>('/sales/', sale),
+  create: (sale: unknown) => api.post<Sale>('/sales/', sale as any),
   delete: (id: string) => api.delete(`/sales/${id}`),
 };
 
