@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { Card, Button, Modal, Input } from '..';
 import { format } from 'date-fns';
@@ -9,6 +9,8 @@ export const StockPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [stockFilter, setStockFilter] = useState<'all' | 'low' | 'medium' | 'high'>('all');
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<CreateStockRequest>({
     snack_id: '',
     quantity: 0,
@@ -37,6 +39,80 @@ export const StockPage: React.FC = () => {
         await deleteStock(id);
       } catch (err) {
         console.error('Failed to delete stock:', err);
+      }
+    }
+  };
+
+  const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    try {
+      const fileExtension = file.name.split('.').pop()?.toLowerCase();
+      let data: string[][] = [];
+
+      if (fileExtension === 'csv') {
+        const text = await file.text();
+        const lines = text.trim().split('\n');
+        data = lines.map((line) =>
+          line.split(',').map((cell) => cell.trim())
+        );
+      } else if (['xlsx', 'xls'].includes(fileExtension || '')) {
+        // For Excel files, we'll need to use a library or fallback to CSV
+        alert('Please export as CSV format for import. Excel format coming soon!');
+        setIsImporting(false);
+        return;
+      } else {
+        alert('Please upload a CSV or Excel file');
+        setIsImporting(false);
+        return;
+      }
+
+      // Skip header row and process data
+      const headerRow = data[0];
+      const snackIdIndex = headerRow.findIndex((h) => h.toLowerCase().includes('snack') || h.toLowerCase().includes('id'));
+      const quantityIndex = headerRow.findIndex((h) => h.toLowerCase().includes('initial') || h.toLowerCase().includes('quantity'));
+      const currentQtyIndex = headerRow.findIndex((h) => h.toLowerCase().includes('current'));
+
+      if (snackIdIndex === -1 || quantityIndex === -1 || currentQtyIndex === -1) {
+        alert('CSV must have columns: Snack/ID, Initial/Quantity, Current');
+        setIsImporting(false);
+        return;
+      }
+
+      let successCount = 0;
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        if (row.length < 3) continue;
+
+        const snackId = row[snackIdIndex];
+        const quantity = parseInt(row[quantityIndex]);
+        const quantityCurrent = parseInt(row[currentQtyIndex]);
+
+        if (snackId && !isNaN(quantity) && !isNaN(quantityCurrent)) {
+          try {
+            await createStock({
+              snack_id: snackId,
+              quantity,
+              quantity_now: quantityCurrent,
+            });
+            successCount++;
+          } catch (err) {
+            console.error(`Failed to import row ${i}:`, err);
+          }
+        }
+      }
+
+      alert(`Successfully imported ${successCount} stock entries!`);
+      await fetchStocks();
+    } catch (err) {
+      console.error('Failed to import file:', err);
+      alert('Error importing file. Please check the format and try again.');
+    } finally {
+      setIsImporting(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
       }
     }
   };
@@ -85,9 +161,27 @@ export const StockPage: React.FC = () => {
             </p>
           </div>
 
-          <Button onClick={() => setIsModalOpen(true)} size="lg">
-            <span className="text-lg mr-2">＋</span> Add Stock
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              variant="outline"
+              size="lg"
+              disabled={isImporting}
+            >
+              <span className="mr-2">📥</span> {isImporting ? 'Importing...' : 'Import CSV'}
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,.xlsx,.xls"
+              onChange={handleFileImport}
+              className="hidden"
+              disabled={isImporting}
+            />
+            <Button onClick={() => setIsModalOpen(true)} size="lg">
+              <span className="text-lg mr-2">＋</span> Add Stock
+            </Button>
+          </div>
         </div>
 
         {error && (
