@@ -13,8 +13,12 @@ export const Home: React.FC = () => {
   }, [fetchSnacks, fetchSales, fetchStocks]);
 
   const totalRevenue = sales.reduce((total, sale) => {
-    const price = sale.snack?.price || 0;
-    return total + (price * sale.quantity);
+    const saleTotal = sale.total_price ?? (sale.sale_snacks?.reduce((s, item) => {
+      const itemPrice = item.price ?? 0;
+      const itemQty = item.quantity ?? 0;
+      return s + itemPrice * itemQty;
+    }, 0) ?? 0);
+    return total + saleTotal;
   }, 0);
 
   const lowStockCount = stocks.filter(stock => {

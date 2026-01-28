@@ -4,12 +4,19 @@ export interface Snack {
   price: number;
 }
 
+export interface SaleSnackItem {
+  id: string;
+  quantity: number;
+  snack_name?: string;
+  price: number;
+}
+
 export interface Sale {
+  operator?: string;
   id: string;
   timestamp: string;
-  snack_id: string;
-  quantity: number;
-  snack?: Snack;
+  total_price: number;
+  sale_snacks: SaleSnackItem[];
 }
 
 export interface Stock {

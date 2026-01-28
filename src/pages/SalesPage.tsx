@@ -13,6 +13,7 @@ export const SalesPage: React.FC = () => {
     snack_id: '',
     quantity: 1,
   });
+  const [expandedSales, setExpandedSales] = useState<string[]>([]);
 
   useEffect(() => {
     fetchSales();
@@ -40,6 +41,10 @@ export const SalesPage: React.FC = () => {
     }
   };
 
+  const toggleExpanded = (id: string) => {
+    setExpandedSales((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
   // Filter sales by date
   const filterByDate = (sale: typeof sales[0]) => {
     const saleDate = new Date(sale.timestamp);
@@ -64,17 +69,19 @@ export const SalesPage: React.FC = () => {
   const filteredSales = useMemo(() => {
     return sales
       .filter(filterByDate)
-      .filter((sale) =>
-        sale.snack?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        sale.snack_id.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+      .filter((sale) => {
+        const q = searchTerm.toLowerCase();
+        if (!q) return true;
+        if ((sale.operator || '').toLowerCase().includes(q)) return true;
+        if ((sale.id || '').toLowerCase().includes(q)) return true;
+        return (sale.sale_snacks || []).some((it) => (it.snack_name || '').toLowerCase().includes(q));
+      })
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [sales, searchTerm, dateFilter]);
 
   const calculateTotal = (salesList: typeof sales = filteredSales) => {
     return salesList.reduce((total, sale) => {
-      const price = sale.snack?.price || 0;
-      return total + price * sale.quantity;
+      return total + (sale.total_price || 0);
     }, 0);
   };
 
@@ -130,7 +137,7 @@ export const SalesPage: React.FC = () => {
               </label>
               <input
                 type="text"
-                placeholder="Search by snack name or ID..."
+                placeholder="Search by operator, snack name or ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-300 transition"
@@ -196,13 +203,13 @@ export const SalesPage: React.FC = () => {
                       Date/Time
                     </th>
                     <th className="text-left py-4 px-6 font-semibold text-slate-700 text-xs uppercase tracking-wider">
+                      Operator
+                    </th>
+                    <th className="text-left py-4 px-6 font-semibold text-slate-700 text-xs uppercase tracking-wider">
                       Snack
                     </th>
                     <th className="text-right py-4 px-6 font-semibold text-slate-700 text-xs uppercase tracking-wider">
                       Qty
-                    </th>
-                    <th className="text-right py-4 px-6 font-semibold text-slate-700 text-xs uppercase tracking-wider">
-                      Price
                     </th>
                     <th className="text-right py-4 px-6 font-semibold text-slate-700 text-xs uppercase tracking-wider">
                       Total
@@ -215,54 +222,96 @@ export const SalesPage: React.FC = () => {
 
                 <tbody className="divide-y divide-slate-100">
                   {filteredSales.map((sale, index) => {
-                    const price = sale.snack?.price || 0;
-                    const rowTotal = price * sale.quantity;
+                    const items = sale.sale_snacks || [];
+                    const snackNames = items.map((it) => it.snack_name).filter(Boolean).join(', ');
+                    const qty = items.reduce((s, it) => s + (it.quantity || 0), 0);
+                    const rowTotal = sale.total_price || 0;
 
                     return (
-                      <tr
-                        key={sale.id}
-                        className="hover:bg-slate-50 transition animate-slideUp"
-                        style={{ animationDelay: `${index * 0.03}s` }}
-                      >
-                        <td className="py-4 px-6 text-sm text-slate-600 whitespace-nowrap">
-                          {format(new Date(sale.timestamp), 'MMM dd, yyyy HH:mm')}
-                        </td>
+                      <React.Fragment key={sale.id}>
+                        <tr
+                          className="hover:bg-slate-50 transition animate-slideUp"
+                          style={{ animationDelay: `${index * 0.03}s` }}
+                        >
+                          <td className="py-4 px-6 text-sm text-slate-600 whitespace-nowrap">
+                            {format(new Date(sale.timestamp), 'MMM dd, yyyy HH:mm')}
+                          </td>
 
-                        <td className="py-4 px-6">
-                          <div className="font-medium text-slate-900">
-                            {sale.snack?.name || sale.snack_id}
-                          </div>
-                          <div className="text-xs text-slate-500">
-                            ID: {sale.snack_id}
-                          </div>
-                        </td>
+                          <td className="py-4 px-6">
+                            <div className="font-medium text-slate-900">
+                              {sale.operator || '—'}
+                            </div>
+                            <div className="text-xs text-slate-500">
+                              {sale.operator ? '' : 'No operator'}
+                            </div>
+                          </td>
 
-                        <td className="text-right py-4 px-6">
-                          <span className="inline-flex items-center justify-center min-w-[2.5rem] px-3 py-1 rounded-full text-sm font-semibold bg-slate-100 text-slate-700">
-                            {sale.quantity}
-                          </span>
-                        </td>
+                          <td className="py-4 px-6">
+                            <div className="font-medium text-slate-900">
+                              {snackNames || '—'}
+                            </div>
+                          </td>
 
-                        <td className="text-right py-4 px-6 text-sm text-slate-600 font-medium whitespace-nowrap">
-                          ฿{price.toFixed(2)}
-                        </td>
+                          <td className="text-right py-4 px-6">
+                            <span className="inline-flex items-center justify-center min-w-[2.5rem] px-3 py-1 rounded-full text-sm font-semibold bg-slate-100 text-slate-700">
+                              {qty}
+                            </span>
+                          </td>
 
-                        <td className="text-right py-4 px-6 whitespace-nowrap">
-                          <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                            ฿{rowTotal.toFixed(2)}
-                          </span>
-                        </td>
+                          <td className="text-right py-4 px-6 whitespace-nowrap">
+                            <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                              ฿{rowTotal.toFixed(2)}
+                            </span>
+                          </td>
 
-                        <td className="text-center py-4 px-6">
-                          <Button
-                            variant="destructive"
-                            onClick={() => handleDelete(sale.id)}
-                            size="sm"
-                          >
-                            Delete
-                          </Button>
-                        </td>
-                      </tr>
+                          <td className="text-center py-4 px-6">
+                            <div className="flex items-center justify-center gap-2">
+                              <Button
+                                variant="outline"
+                                onClick={() => toggleExpanded(sale.id)}
+                                size="sm"
+                              >
+                                Details
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                onClick={() => handleDelete(sale.id)}
+                                size="sm"
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                        {expandedSales.includes(sale.id) && (
+                          <tr className="bg-slate-50">
+                            <td colSpan={7} className="py-3 px-6">
+                              <div className="text-sm text-slate-700">
+                                <table className="w-full">
+                                  <thead>
+                                    <tr>
+                                      <th className="text-left text-xs text-slate-500 pb-2">Snack</th>
+                                      <th className="text-right text-xs text-slate-500 pb-2">Qty</th>
+                                      <th className="text-right text-xs text-slate-500 pb-2">Subtotal</th>
+                                      <th className="text-right text-xs text-slate-500 pb-2">Total</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {items.map((it) => (
+                                      <tr key={it.id} className="border-t border-slate-100">
+                                        <td className="py-2 text-sm text-slate-800">{it.snack_name}</td>
+                                        <td className="py-2 text-sm text-slate-800 text-right">{it.quantity}</td>
+                                        <td className="py-2 text-sm text-slate-800 text-right">฿{(it.price || 0).toFixed(2)}</td>
+                                        <td className="py-2 text-sm text-slate-800 text-right">฿{((it.price || 0) * (it.quantity || 0)).toFixed(2)}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
                     );
                   })}
                 </tbody>
